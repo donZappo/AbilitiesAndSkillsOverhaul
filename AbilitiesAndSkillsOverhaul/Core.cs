@@ -69,29 +69,29 @@ namespace AbilitiesAndSkillsOverhaul
         internal static ModSettings Settings;
     }
 
-    [HarmonyPatch(typeof(ToHit), "GetRefireModifier", null)]
-    public static class Gunnery_Adjustments
-    {
-        public static void Postfix(ToHit __instance, Weapon weapon, ref float __result)
-        {
-            int skillGunnery = weapon.parent.SkillGunnery;
-            bool flag = skillGunnery < 10 && skillGunnery >= 6 && weapon.RefireModifier > 0 && weapon.roundsSinceLastFire < 2;
-            if (flag)
-            {
-                __result = (float)weapon.RefireModifier - 1f;
-            }
-            bool flag2 = skillGunnery >= 10 && weapon.RefireModifier > 1 && weapon.roundsSinceLastFire < 2;
-            if (flag2)
-            {
-                __result = (float)weapon.RefireModifier - 2f;
-            }
-            bool flag3 = skillGunnery >= 10 && weapon.RefireModifier == 1 && weapon.roundsSinceLastFire < 2;
-            if (flag3)
-            {
-                __result = (float)weapon.RefireModifier - 1f;
-            }
-        }
-    }
+    //[HarmonyPatch(typeof(ToHit), "GetRefireModifier", null)]
+    //public static class Gunnery_Adjustments
+    //{
+        //public static void Postfix(ToHit __instance, Weapon weapon, ref float __result)
+        //{
+            //int skillGunnery = weapon.parent.SkillGunnery;
+            //bool flag = skillGunnery < 10 && skillGunnery >= 6 && weapon.RefireModifier > 0 && weapon.roundsSinceLastFire < 2;
+            //if (flag)
+            //{
+                //__result = (float)weapon.RefireModifier - 1f;
+            //}
+            //bool flag2 = skillGunnery >= 10 && weapon.RefireModifier > 1 && weapon.roundsSinceLastFire < 2;
+            //if (flag2)
+            //{
+                //__result = (float)weapon.RefireModifier - 2f;
+            //}
+            //bool flag3 = skillGunnery >= 10 && weapon.RefireModifier == 1 && weapon.roundsSinceLastFire < 2;
+            //if (flag3)
+            //{
+                //__result = (float)weapon.RefireModifier - 1f;
+            //}
+        //}
+    //}
     [HarmonyPatch(typeof(ToHit), "GetSelfSpeedModifier", null)]
     public static class Tactics_Adjustments
     {
@@ -104,10 +104,11 @@ namespace AbilitiesAndSkillsOverhaul
             {
                 __result = 0f;
             }
+
         }
     }
 
-    [HarmonyPatch(typeof(ToHit), "GetSelfSprintModifier", null)]
+    [HarmonyPatch(typeof(ToHit), "GetSelfSprintedModifier", null)]
     public static class Tactics_Sprint_Adjustments
     {
         public static void Postfix(ToHit __instance, AbstractActor attacker, ref float __result)
@@ -138,6 +139,37 @@ namespace AbilitiesAndSkillsOverhaul
                 if (tactics >= 10)
                     __result++;
             }
+        }
+    }
+
+    [HarmonyPatch(typeof(AttackStackSequence), "OnAdded")]
+    public static class Gate_Initiative_Punch_Patch
+    {
+        public static void Prefix(AttackStackSequence __instance)
+        {
+            if (__instance.owningActor.SkillTactics < 6)
+                __instance.isMoraleAttack = false;
+        }
+
+        public static void Postfix(AttackStackSequence __instance)
+        {
+            if (__instance.owningActor.SkillTactics < 6)
+            {
+                __instance.isMoraleAttack = true;
+                __instance.owningActor.team.ModifyMorale(__instance.owningActor.OffensivePushCost * -1);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(AbstractActor), "ForceUnitOnePhaseUp")]
+    public static class Gate_Initiative_Boost_Defensive_Patch
+    {
+        public static bool Prefix(AbstractActor __instance)
+        {
+            if (__instance.SkillTactics < 4)
+                return false;
+            else
+                return true;
         }
     }
 }
