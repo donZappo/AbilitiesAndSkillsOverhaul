@@ -199,98 +199,116 @@ namespace AbilitiesAndSkillsOverhaul
     }
 
     //Correct the Inspired Indicator
-    [HarmonyPatch(typeof(CombatHUDStatusPanel), "ShowInspiredIndicator")]
-    public static class CombatHUDStatusPanel_ShowInspiredIndicator_Patch
+    public class RefreshIndicator : MonoBehaviour
     {
-        private static string resolveString = "Initialize";
+        private CombatHUDStatusPanel panel;
 
-        public static bool Prefix(CombatHUDStatusPanel __instance, Mech mech)
+        void Awake()
         {
-            if (mech.IsFuryInspired)
-                return true;
-            if (mech.IsMoraleInspired)
+            panel = gameObject.GetComponent<CombatHUDStatusPanel>();
+        }
+
+        void Update()
+        {
+            if (MoraleDefendSequence_OnAdded_Patch.hasChanged)
             {
-                var resolve = mech.pilot.Team.Morale;
-                if (resolve >= 100)
-                    resolveString = "This unit gets -1/-2/-3 Difficulty to all attacks for 50%/75%/100% Resolve.";
-                else if (resolve >= 75)
-                    resolveString = "This unit gets -1/-2/-3 Difficulty to all attacks for 50%/75%/100% Resolve.";
-                else
-                    resolveString = "This unit gets -1/-2/-3 Difficulty to all attacks for 50%/75%/100% Resolve.";
-
-                Traverse showBuff = Traverse.Create(__instance).Method("ShowBuff", new Type[] { typeof(SVGAsset), typeof(Text),
-                typeof(Text), typeof(Vector3), typeof(bool) });
-
-                showBuff.GetValue(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.StatusInspiredIcon,
-                    new Text("INSPIRED", Array.Empty<object>()), new Text(resolveString, Array.Empty<object>()), __instance.defaultIconScale, false);
-
-                return false;
+                Traverse.Create(panel)
+                    .Method("RefreshDisplayedCombatant")
+                    .GetValue();
+                MoraleDefendSequence_OnAdded_Patch.hasChanged = false;
             }
-            return true;
         }
     }
 
-
-    //[HarmonyPatch(typeof(CombatHUDMechTray), "refreshMechInfo")]
-    //public static class CombatHUDMechTray_refreshMechInfo_Patch
-    //{
-    //    public static void Postfix(CombatHUDMechTray __instance, Mech ___mech)
-    //    {
-    //        if (___mech != null)
-    //            __instance.StatusPanel.ShowInspiredIndicator(___mech);
-    //    }
-    //}
-    //    //Invoke dark rituals
-    //    public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-    //    {
-    //        var codes = instructions.ToList();
-    //        for (var i = 0; i < codes.Count; i++)
-    //        {
-    //            Log("a");
-    //            if (codes[i].opcode == OpCodes.Ldstr &&
-    //                codes[i].operand.ToString().StartsWith("This unit gets"))
-    //            {
-    //                codes[i].operand = BonusString;
-    //            }
-    //        }
-    //        return codes.AsEnumerable();
-    //    }
-    //}
-
-
-        //[HarmonyPatch(typeof(CombatHUDStatusPanel), "ShowInspiredIndicator")]
-        //public static class CombatHUDStatusPanel_ShowInspiredIndicator_Patch
-        //{
-        //    public static string MakeString(Mech mech)
-        //    {
-        //        try
-        //        {
-        //            var resolve = mech.pilot.Team.Morale;
-        //            if (resolve >= 100)
-        //                return "This unit gets -3 Difficulty to all attacks.";
-        //            if (resolve >= 75)
-        //                return "This unit gets -2 Difficulty to all attacks.";
-        //            return "feces";
-        //            //return "This unit gets -1 Difficulty to all attacks.";
-        //        }
-        //        catch { return "Bombs away"; }
-        //    }
-
-        //    public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-        //    {
-        //        var codes = instructions.ToList();
-        //        var helper = AccessTools.Method(typeof(CombatHUDStatusPanel_ShowInspiredIndicator_Patch), "MakeString", new[] { typeof(Mech) });
-        //        for (var i = 0; i < codes.Count; i++)
-        //        {
-        //            if (codes[i].opcode == OpCodes.Ldstr &&
-        //                codes[i].operand.ToString().StartsWith("This unit gets"))
-        //            {
-        //                codes.RemoveAt(i);
-        //                codes.Insert(i, new CodeInstruction(OpCodes.Ldarg_1));
-        //                codes.Insert(i, new CodeInstruction(OpCodes.Call, helper));
-        //            }
-        //        }
-        //        return codes.AsEnumerable();
-        //    }
-        //}
+    [HarmonyPatch(typeof(MoraleDefendSequence), "OnAdded")]
+    public static class MoraleDefendSequence_OnAdded_Patch
+    {
+        internal static bool hasChanged;
+        public static void Postfix()
+        {
+            hasChanged = true;
+        }
     }
+
+    [HarmonyPatch(typeof(CombatHUDStatusPanel), "ShowInspiredIndicator")]
+    public static class CombatHUDStatusPanel_ShowInspiredIndicator_Patch
+    {
+        private static RefreshIndicator refreshIndicator;
+
+        public static void Prefix(CombatHUDStatusPanel __instance)
+        {
+            if (__instance.gameObject.GetComponent<RefreshIndicator>() == null)
+            {
+                __instance.gameObject.AddComponent<RefreshIndicator>();
+            }
+        }
+
+        public static string MakeString(Mech mech)
+        {
+            if (mech == null)
+            {
+                Log("BOMB");
+                return "BOMB";
+            }
+
+            var resolve = mech.team.Morale;
+            if (resolve >= 100)
+                return "This unit gets -3 Difficulty to all attacks.";
+            if (resolve >= 75)
+                return "This unit gets -2 Difficulty to all attacks.";
+
+            return "This unit gets -1 Difficulty to all attacks.";
+        }
+
+        //Invoke dark magic
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var codes = instructions.ToList();
+            var helper = AccessTools.Method(typeof(CombatHUDStatusPanel_ShowInspiredIndicator_Patch), "MakeString", new[] { typeof(Mech) });
+            for (var i = 0; i < codes.Count; i++)
+            {
+                if (codes[i].opcode == OpCodes.Ldstr &&
+                    codes[i].operand.ToString().StartsWith("This unit gets"))
+                {
+                    codes.RemoveAt(i);
+                    codes.Insert(i, new CodeInstruction(OpCodes.Ldarg_1));
+                    codes.Insert(i + 1, new CodeInstruction(OpCodes.Call, helper));
+                }
+            }
+
+            return codes.AsEnumerable();
+        }
+    }
+
+    //Old method in case the above methods don't work
+    //[HarmonyPatch(typeof(CombatHUDStatusPanel), "ShowInspiredIndicator")]
+    //public static class CombatHUDStatusPanel_ShowInspiredIndicator_Patch
+    //{
+    //    private static string resolveString = "Initialize";
+
+    //    public static bool Prefix(CombatHUDStatusPanel __instance, Mech mech)
+    //    {
+    //        if (mech.IsFuryInspired)
+    //            return true;
+    //        if (mech.IsMoraleInspired)
+    //        {
+    //            var resolve = mech.pilot.Team.Morale;
+    //            if (resolve >= 100)
+    //                resolveString = "This unit gets -1/-2/-3 Difficulty to all attacks for 50%/75%/100% Resolve.";
+    //            else if (resolve >= 75)
+    //                resolveString = "This unit gets -1/-2/-3 Difficulty to all attacks for 50%/75%/100% Resolve.";
+    //            else
+    //                resolveString = "This unit gets -1/-2/-3 Difficulty to all attacks for 50%/75%/100% Resolve.";
+
+    //            Traverse showBuff = Traverse.Create(__instance).Method("ShowBuff", new Type[] { typeof(SVGAsset), typeof(Text),
+    //            typeof(Text), typeof(Vector3), typeof(bool) });
+
+    //            showBuff.GetValue(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.StatusInspiredIcon,
+    //                new Text("INSPIRED", Array.Empty<object>()), new Text(resolveString, Array.Empty<object>()), __instance.defaultIconScale, false);
+
+    //            return false;
+    //        }
+    //        return true;
+    //    }
+    //}
+}
