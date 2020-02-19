@@ -280,6 +280,58 @@ namespace AbilitiesAndSkillsOverhaul
         }
     }
 
+    //Make Guts not contribute to sudden death.
+    [HarmonyPatch(typeof(Contract), "FinalizeKilledMechWarriors")]
+    public static class Contract_FinalizeKilledMechWarriors_Patch
+    {
+        public static bool Prefix(Contract __instance, SimGameState sim)
+        {
+            __instance.PushReport("MechWarriorFinalizeKill");
+            foreach (UnitResult unitResult in __instance.PlayerUnitResults)
+            {
+                Pilot pilot = unitResult.pilot;
+                PilotDef pilotDef = pilot.pilotDef;
+                if (!unitResult.pilot.IsIncapacitated || unitResult.pilot.pilotDef.IsImmortal)
+                {
+                    if (pilotDef != null)
+                    {
+                        pilotDef.SetRecentInjuryDamageType(DamageType.NOT_SET);
+                    }
+                }
+                else
+                {
+                    float num = pilot.LethalInjuries ? sim.Constants.Pilot.LethalDeathChance : sim.Constants.Pilot.IncapacitatedDeathChance;
+                    if (pilot.LethalInjuries)
+                        num = Mathf.Max(0f, num);
+                    else
+                        num = Mathf.Max(0f, num - sim.Constants.Pilot.GutsDeathReduction * (float)pilot.Guts);
+
+                    float num2 = sim.NetworkRandom.Float(0f, 1f);
+                    string s = string.Format("Pilot {0} needs to roll above {1} to survive. They roll {2} resulting in {3}", new object[]
+                    {
+                        pilot.Name,
+                        num,
+                        num2,
+                        (num2 < num) ? "DEATH" : "LIFE"
+                    });
+                    __instance.ReportLog(s);
+                    if (num2 < num)
+                    {
+                        __instance.KilledPilots.Add(pilot);
+                    }
+                    else if (pilotDef != null)
+                    {
+                        pilotDef.SetRecentInjuryDamageType(DamageType.NOT_SET);
+                    }
+                }
+            }
+            __instance.PopReport();
+            return false;
+        }
+    }
+
+
+
     //Old method in case the above methods don't work
     //[HarmonyPatch(typeof(CombatHUDStatusPanel), "ShowInspiredIndicator")]
     //public static class CombatHUDStatusPanel_ShowInspiredIndicator_Patch
