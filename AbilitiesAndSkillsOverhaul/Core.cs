@@ -300,7 +300,26 @@ namespace AbilitiesAndSkillsOverhaul
                 }
                 else
                 {
-                    float num = pilot.LethalInjuries ? sim.Constants.Pilot.LethalDeathChance : sim.Constants.Pilot.IncapacitatedDeathChance;
+                    Log(sim.Constants.Pilot.LethalDeathChance.ToString());
+                    Log(sim.Constants.Pilot.IncapacitatedDeathChance.ToString());
+                    var lethalDeathChance = sim.Constants.Pilot.LethalDeathChance;
+                    var incapacitatedDeathChance = sim.Constants.Pilot.IncapacitatedDeathChance;
+                    foreach (var upgrade in sim.ShipUpgrades)
+                    {
+                        foreach (var foo in upgrade.Stats)
+                        {
+                            if (foo.name == "IncapacitatedDeathChance")
+                                incapacitatedDeathChance += float.Parse(foo.value);
+                            if (foo.name == "LethalDeathChance")
+                                lethalDeathChance += float.Parse(foo.value);
+                        }
+                    }
+                    incapacitatedDeathChance = Mathf.Max(0, incapacitatedDeathChance);
+                    lethalDeathChance = Mathf.Max(0, lethalDeathChance);
+
+                    Log(lethalDeathChance.ToString());
+                    Log(incapacitatedDeathChance.ToString());
+                    float num = pilot.LethalInjuries ? lethalDeathChance : incapacitatedDeathChance;
                     if (pilot.LethalInjuries)
                         num = Mathf.Max(0f, num);
                     else
