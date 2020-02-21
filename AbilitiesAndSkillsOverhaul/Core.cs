@@ -286,7 +286,7 @@ namespace AbilitiesAndSkillsOverhaul
     {
         public static bool Prefix(Contract __instance, SimGameState sim)
         {
-            __instance.PushReport("MechWarriorFinalizeKill");
+            Traverse.Create(__instance).Method("PushReport", new Type[] { typeof(string) }).GetValue("MechWarriorFinalizeKill");
             foreach (UnitResult unitResult in __instance.PlayerUnitResults)
             {
                 Pilot pilot = unitResult.pilot;
@@ -314,7 +314,7 @@ namespace AbilitiesAndSkillsOverhaul
                         num2,
                         (num2 < num) ? "DEATH" : "LIFE"
                     });
-                    __instance.ReportLog(s);
+                    Traverse.Create(__instance).Method("ReportLog", new Type[] { typeof(string) }).GetValue("s");
                     if (num2 < num)
                     {
                         __instance.KilledPilots.Add(pilot);
@@ -325,7 +325,7 @@ namespace AbilitiesAndSkillsOverhaul
                     }
                 }
             }
-            __instance.PopReport();
+            Traverse.Create(__instance).Method("PopReport").GetValue();
             return false;
         }
     }
