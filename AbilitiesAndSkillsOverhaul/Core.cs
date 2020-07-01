@@ -330,6 +330,12 @@ namespace AbilitiesAndSkillsOverhaul
                         (num2 < num) ? "DEATH" : "LIFE"
                     });
                     Traverse.Create(__instance).Method("ReportLog", new Type[] { typeof(string) }).GetValue("s");
+                    if (unitResult.mech.Chassis.weightClass == WeightClass.ASSAULT && unitResult.pilot.pilotDef.PilotTags.Contains("PQ_pilot_elite"))
+                    {
+                        num *= 0.5f;
+                        unitResult.pilot.pilotDef.PilotTags.Remove("PQ_pilot_elite");
+                    }
+
                     if (num2 < num)
                     {
                         __instance.KilledPilots.Add(pilot);
