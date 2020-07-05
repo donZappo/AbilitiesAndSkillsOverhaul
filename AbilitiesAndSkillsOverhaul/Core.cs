@@ -329,7 +329,7 @@ namespace AbilitiesAndSkillsOverhaul
                         num2,
                         (num2 < num) ? "DEATH" : "LIFE"
                     });
-                    Traverse.Create(__instance).Method("ReportLog", new Type[] { typeof(string) }).GetValue("s")
+                    Traverse.Create(__instance).Method("ReportLog", new Type[] { typeof(string) }).GetValue("s");
 
                     if (num2 < num)
                     {
