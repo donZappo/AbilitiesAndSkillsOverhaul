@@ -10,5 +10,6 @@ namespace AbilitiesAndSkillsOverhaul
         public bool Debug = false;
         public string modDirectory;
         public bool HasInspiredFire = false;
+        public float TacticsSensorBonus = 15f;
     }
 }

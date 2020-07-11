@@ -346,37 +346,46 @@ namespace AbilitiesAndSkillsOverhaul
         }
     }
 
+    //Increase sensor range with Tactics
+    [HarmonyPatch(typeof(AbstractActor), "SensorDistanceAbsolute", MethodType.Getter)]
+    public static class AbstractActor_SensorDistanceAbsolute_Patch
+    {
+        public static void Postfix(AbstractActor __instance, ref float __result)
+        {
+            var tactics = __instance.SkillTactics;
+            __result += tactics * Core.Settings.TacticsSensorBonus;
+        }
+    }
 
+            //Old method in case the above methods don't work
+            //[HarmonyPatch(typeof(CombatHUDStatusPanel), "ShowInspiredIndicator")]
+            //public static class CombatHUDStatusPanel_ShowInspiredIndicator_Patch
+            //{
+            //    private static string resolveString = "Initialize";
 
-    //Old method in case the above methods don't work
-    //[HarmonyPatch(typeof(CombatHUDStatusPanel), "ShowInspiredIndicator")]
-    //public static class CombatHUDStatusPanel_ShowInspiredIndicator_Patch
-    //{
-    //    private static string resolveString = "Initialize";
+            //    public static bool Prefix(CombatHUDStatusPanel __instance, Mech mech)
+            //    {
+            //        if (mech.IsFuryInspired)
+            //            return true;
+            //        if (mech.IsMoraleInspired)
+            //        {
+            //            var resolve = mech.pilot.Team.Morale;
+            //            if (resolve >= 100)
+            //                resolveString = "This unit gets -1/-2/-3 Difficulty to all attacks for 50%/75%/100% Resolve.";
+            //            else if (resolve >= 75)
+            //                resolveString = "This unit gets -1/-2/-3 Difficulty to all attacks for 50%/75%/100% Resolve.";
+            //            else
+            //                resolveString = "This unit gets -1/-2/-3 Difficulty to all attacks for 50%/75%/100% Resolve.";
 
-    //    public static bool Prefix(CombatHUDStatusPanel __instance, Mech mech)
-    //    {
-    //        if (mech.IsFuryInspired)
-    //            return true;
-    //        if (mech.IsMoraleInspired)
-    //        {
-    //            var resolve = mech.pilot.Team.Morale;
-    //            if (resolve >= 100)
-    //                resolveString = "This unit gets -1/-2/-3 Difficulty to all attacks for 50%/75%/100% Resolve.";
-    //            else if (resolve >= 75)
-    //                resolveString = "This unit gets -1/-2/-3 Difficulty to all attacks for 50%/75%/100% Resolve.";
-    //            else
-    //                resolveString = "This unit gets -1/-2/-3 Difficulty to all attacks for 50%/75%/100% Resolve.";
+            //            Traverse showBuff = Traverse.Create(__instance).Method("ShowBuff", new Type[] { typeof(SVGAsset), typeof(Text),
+            //            typeof(Text), typeof(Vector3), typeof(bool) });
 
-    //            Traverse showBuff = Traverse.Create(__instance).Method("ShowBuff", new Type[] { typeof(SVGAsset), typeof(Text),
-    //            typeof(Text), typeof(Vector3), typeof(bool) });
+            //            showBuff.GetValue(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.StatusInspiredIcon,
+            //                new Text("INSPIRED", Array.Empty<object>()), new Text(resolveString, Array.Empty<object>()), __instance.defaultIconScale, false);
 
-    //            showBuff.GetValue(LazySingletonBehavior<UIManager>.Instance.UILookAndColorConstants.StatusInspiredIcon,
-    //                new Text("INSPIRED", Array.Empty<object>()), new Text(resolveString, Array.Empty<object>()), __instance.defaultIconScale, false);
-
-    //            return false;
-    //        }
-    //        return true;
-    //    }
-    //}
-}
+            //            return false;
+            //        }
+            //        return true;
+            //    }
+            //}
+        }
